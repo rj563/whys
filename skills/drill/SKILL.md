@@ -5,6 +5,8 @@ description: Use before planning or building anything new or any change to an ex
 
 # Whys drill
 
+`${CLAUDE_PLUGIN_ROOT}` means this plugin's root, two directories above this skill's base directory, if the variable isn't filled in.
+
 The owner keeps correcting work that was built on things nobody said out loud, such as "follow FIA rules" being assumed to include multi-class racing. The drill turns every unspoken assumption into a confirmed statement before anything is built.
 
 **The rule: never guess.** If you would fill something in, ask about it instead. You decide only what the owner explicitly says "your call" about, and you tag it `[delegated]`. Never start building, and never write "I'll go ahead unless…". If the owner says **"skip whys"**, stop the drill and do what they asked.

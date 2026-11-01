@@ -5,6 +5,8 @@ description: Use before each build step or plan task when the project has a docs
 
 # Whys check
 
+`${CLAUDE_PLUGIN_ROOT}` means this plugin's root, two directories above this skill's base directory, if the variable isn't filled in.
+
 The statement file in `docs/whys/` is the design. Whatever a step needs that isn't in it is a guess, and guesses are not allowed. That includes small ones: an edge-case behaviour, a default value, a limit, an ordering, a label, a colour.
 
 ## Before the step
