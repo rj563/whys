@@ -6,6 +6,7 @@
   whys miss <project> <statement-id> <kind> <note>
   whys kinds
 """
+import datetime
 import os
 import re
 import sys
@@ -149,11 +150,61 @@ def cover(whys_path, plan_path):
     return 1 if problems else 0
 
 
+HERE = os.path.dirname(os.path.realpath(__file__))
+GAPS = os.path.join(HERE, "..", "skills", "drill", "gaps.md")
+GAP_LINE = re.compile(r"^- ([\w-]+): (.+)$")
+
+
+def miss_log():
+    home = os.environ.get("WHYS_HOME") or os.path.join(os.path.expanduser("~"), ".claude", "whys")
+    return os.path.join(home, "misses.md")
+
+
+def miss(project, sid, kind, note):
+    if not ID.match(sid):
+        print(f"bad id {sid}")
+        return 1
+    path = miss_log()
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    new = not os.path.exists(path)
+    with open(path, "a", encoding="utf-8") as fh:
+        if new:
+            fh.write("# Whys miss log\n# date | project | statement | kind | note\n")
+        clean = lambda v: " ".join(v.replace("|", "/").split())
+        fh.write(f"{datetime.date.today()} | {clean(project)} | {sid} | {clean(kind)} | {clean(note)}\n")
+    return 0
+
+
+def kinds():
+    probes, counts = {}, {}
+    with open(GAPS, encoding="utf-8") as fh:
+        for line in fh:
+            m = GAP_LINE.match(line.strip())
+            if m:
+                probes[m.group(1)] = m.group(2)
+                counts[m.group(1)] = 0
+    if os.path.exists(miss_log()):
+        with open(miss_log(), encoding="utf-8") as fh:
+            for line in fh:
+                parts = [p.strip() for p in line.split("|")]
+                if line.startswith("#") or len(parts) != 5:
+                    continue
+                counts[parts[3]] = counts.get(parts[3], 0) + 1
+                probes.setdefault(parts[3], f"Learned from misses, e.g. {parts[4]}")
+    for k in sorted(counts, key=lambda k: -counts[k]):
+        print(f"{k} {counts[k]}  {probes[k]}")
+    return 0
+
+
 def main(argv):
     if len(argv) == 2 and argv[0] == "lint":
         return lint(argv[1])
     if len(argv) == 3 and argv[0] == "cover":
         return cover(argv[1], argv[2])
+    if len(argv) == 5 and argv[0] == "miss":
+        return miss(*argv[1:])
+    if argv == ["kinds"]:
+        return kinds()
     print(__doc__.strip())
     return 2
 

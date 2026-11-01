@@ -92,5 +92,50 @@ class CoverTest(unittest.TestCase):
         self.assertEqual([l for l in out.splitlines() if l.startswith("uncited")], ["uncited S1.1"])
 
 
+class MissTest(unittest.TestCase):
+    def setUp(self):
+        self.home = tempfile.mkdtemp()
+        self.env = dict(os.environ, WHYS_HOME=os.path.join(self.home, "whys"))
+        self.log = os.path.join(self.home, "whys", "misses.md")
+
+    def tearDown(self):
+        shutil.rmtree(self.home)
+
+    def test_miss_creates_log(self):
+        code, _ = run("miss", "proj", "S1.2", "edge-case", "lapped cars", env=self.env)
+        self.assertEqual(code, 0)
+        self.assertTrue(os.path.exists(self.log))
+
+    def test_miss_appends_line_format(self):
+        run("miss", "proj", "S1.2", "edge-case", "lapped cars", env=self.env)
+        run("miss", "proj", "S1.3", "output", "column order", env=self.env)
+        with open(self.log) as fh:
+            lines = [l for l in fh.read().splitlines() if l.strip() and not l.startswith("#")]
+        self.assertEqual(len(lines), 2)
+        self.assertRegex(lines[0], r"^\d{4}-\d{2}-\d{2} \| proj \| S1\.2 \| edge-case \| lapped cars$")
+
+    def test_miss_rejects_bad_id(self):
+        code, _ = run("miss", "proj", "1.2", "edge-case", "x", env=self.env)
+        self.assertEqual(code, 1)
+        self.assertFalse(os.path.exists(self.log))
+
+    def test_kinds_defaults_only(self):
+        code, out = run("kinds", env=self.env)
+        self.assertEqual(code, 0)
+        kinds = [l.split()[0] for l in out.splitlines()]
+        self.assertEqual(sorted(kinds), sorted(
+            ["reference", "edge-case", "limits", "interaction", "output", "failure", "existing"]))
+
+    def test_kinds_counts(self):
+        run("miss", "p", "S1", "ui", "a", env=self.env)
+        run("miss", "p", "S2", "ui", "b", env=self.env)
+        run("miss", "p", "S3", "edge-case", "c", env=self.env)
+        _, out = run("kinds", env=self.env)
+        lines = out.splitlines()
+        self.assertTrue(lines[0].startswith("ui 2"), out)
+        self.assertTrue(any(l.startswith("edge-case 1") for l in lines), out)
+        self.assertEqual(sum(l.split()[0] == "edge-case" for l in lines), 1)
+
+
 if __name__ == "__main__":
     unittest.main()
