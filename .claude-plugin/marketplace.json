@@ -1,0 +1,8 @@
+{
+  "name": "whys",
+  "description": "Deep batched questioning before building: drill a request into confirmed statements, never guess.",
+  "owner": { "name": "rj563" },
+  "plugins": [
+    { "name": "whys", "description": "Deep batched questioning before building: drill a request into confirmed statements, never guess.", "version": "0.1.0", "source": "./", "author": { "name": "rj563" } }
+  ]
+}

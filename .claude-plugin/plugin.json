@@ -1,0 +1,10 @@
+{
+  "name": "whys",
+  "description": "Deep batched questioning before building: drill a request into confirmed statements, never guess.",
+  "version": "0.1.0",
+  "author": { "name": "rj563" },
+  "homepage": "https://github.com/rj563/whys",
+  "repository": "https://github.com/rj563/whys",
+  "license": "MIT",
+  "keywords": ["requirements", "questions", "5-whys", "planning"]
+}
