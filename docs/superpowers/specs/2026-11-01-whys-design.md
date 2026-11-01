@@ -57,6 +57,10 @@ Rules:
 - Changes to an existing project get a new file that references the statements it replaces or extends.
 - Code comments and commits may cite statement IDs ("per S1.1.1").
 
+## When it runs (owner's decision)
+
+Whys starts automatically before any planning or building, in every project; the owner can abort it by saying so. It must not be skippable by brainstorming going straight to writing-plans, so a single SessionStart hook injects a short instruction (a few lines, once per session — not a per-tool-call hook). Owner says "skip whys" → that request proceeds without a drill.
+
 ## How a drill runs
 
 1. Start from the request (and the brainstorming outcome, if there was one). Read relevant project files first so nothing they answer gets asked.
@@ -68,6 +72,22 @@ Rules:
 ## During development
 
 Before each plan task / build step, check what the step needs against the statement file. If something is not covered and would require a guess: stop, ask the owner (batch if several), add the answers as statements, drill them, record the miss in the miss log, continue.
+
+### How development-time questions are presented (owner confirmed)
+
+Work on the blocked part pauses; one chat message in the drill's batch style, naming the task, the statement it touches, and only the questions blocking that step:
+
+```
+Whys: 2 questions before task 7 (lap scoring)
+Touches S1.1.1 "Each class is scored separately."
+
+1. Do lapped cars in one class affect another class's positions?
+2. Is a class winner announced if only one car finishes?
+```
+
+Work not touched by the gap continues meanwhile. Answers become child statements (S1.1.1.1…), are drilled, and go to the miss log.
+
+When a question is waiting, also send a push notification to the owner's phone (owner's decision), so unattended runs don't sit idle unnoticed.
 
 ## Miss log
 
@@ -94,6 +114,13 @@ The log is **global** (owner's decision): `~/.claude/whys/misses.md`, shared by 
 - **"Your call" covers exactly what the owner names it for.** If the scope is unclear, ask.
 - **Revisions:** a contradicting answer marks the old statement `✗ → S<new>` and adds the new one. A partly answered `?` stays open for the remaining part.
 - **Approval:** the owner approves the closed file (edits allowed) before any build. Superpowers is optional: with it, Whys hands off to writing-plans; without it, Whys just leaves the approved file.
+
+## Calls made after second review (Claude's calls, owner to check)
+
+- **Level 5 is a target, not a cap** (owner: "down to branch 5 there should not be any more, hopefully"). Past level 5 the drill continues but tells the owner which branches are still producing questions. The file closes only when no `?` remains.
+- **Coverage:** every plan task must cite the statements it implements; the plan is checked so that every statement is cited by at least one task and every task cites at least one statement. Tags are a fixed list declared in the file header. Without superpowers, the skill tells Claude to run the check before each change it makes.
+- **IDs are unique per project:** change files continue numbering after the highest top-level ID (S7, S8…) instead of restarting. A replacement edits the old file to `✗ → S<new>`. When a parent is rejected, its children are marked ✗ too, and the next batch lists them so the owner can rescue any that still hold.
+- **Subagents can't ask:** a subagent that hits a gap stops, leaves its work uncommitted, and returns BLOCKED with the questions. The main session batches all blocked questions into one message, and resumes those tasks after the answers. Tasks that don't depend on the open statements continue.
 
 ## Left to the builder
 
