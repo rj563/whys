@@ -11,7 +11,7 @@ The statement file in `docs/whys/` is the design. Whatever a step needs that isn
 
 ## Before the step
 
-1. Read only the statements the task cites (`**Statements:**`), their parents, and lines with the same `#tags`. For example: `grep -nE '^(✗ |\? )?S1\.1(\.|  )' docs/whys/*.md`. Don't read the whole file.
+1. Read only what the task cites: `${CLAUDE_PLUGIN_ROOT}/bin/whys show docs/whys S1.1.1 S1.1.2` prints those statements with their parents, their children and any lines sharing a `#tag`. Don't read the whole file.
 2. List the decisions the step needs: behaviours, values, edge cases, failures, what the owner will see.
 3. Mark each one **covered** (a statement says it, or it follows directly from one), **delegated** (`[delegated]` covers it), or **gap**. A rule you would pick because it is "standard" or "sensible" is still a gap.
 4. If there are no gaps, build the step and cite the statement IDs in comments or commits where it helps.

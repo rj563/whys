@@ -5,6 +5,7 @@
   whys cover <whys-file-or-dir> <plan.md>
   whys miss <project> <statement-id> <kind> <note>
   whys kinds
+  whys show <whys-file-or-dir> <id>...
 """
 import datetime
 import os
@@ -29,6 +30,7 @@ class Statement:
     replaced_by: str | None = None
     file: str = ""
     line: int = 0
+    text: str = ""
 
 
 def md_files(path):
@@ -65,6 +67,8 @@ def parse(path, errors=None):
         if not ID.match(sid):
             errors.append((path, n, f"bad id {sid}"))
             continue
+        if not line[m.end(2):].startswith("  ") or line[m.end(2):].startswith("   "):
+            errors.append((path, n, f"use two spaces after {sid}"))
         rejected = prefix == "✗ " or rest.startswith("✗ ")
         state = "open" if prefix == "? " else "rejected" if rejected else "live"
         tags = TAG.findall(rest)
@@ -72,7 +76,7 @@ def parse(path, errors=None):
             errors.append((path, n, "missing tag" if not tags else "more than one tag"))
         r = REPLACED.search(rest)
         out.append(Statement(sid, sid.count(".") + 1, state, tags[0] if tags else None,
-                             KEYWORD.findall(rest), r.group(1) if r else None, path, n))
+                             KEYWORD.findall(rest), r.group(1) if r else None, path, n, line))
     if allowed is not None:
         for s in out:
             for t in s.tags:
@@ -203,6 +207,28 @@ def kinds():
     return 0
 
 
+def show(path, ids):
+    if not os.path.exists(path):
+        print(f"{path}: not found")
+        return 1
+    stmts = load(path, [])
+    by_id = {s.id: s for s in stmts}
+    unknown = [i for i in ids if i not in by_id]
+    for i in unknown:
+        print(f"unknown {i}")
+    picked = set()
+    for i in ids:
+        if i not in by_id:
+            continue
+        parts = i.split(".")
+        picked |= {".".join(parts[:k]) for k in range(1, len(parts) + 1)}
+        picked |= {s.id for s in stmts if s.id.startswith(i + ".")}
+        picked |= {s.id for s in stmts if set(s.tags) & set(by_id[i].tags)}
+    for s in sorted((by_id[p] for p in picked if p in by_id), key=lambda s: (s.file, s.line)):
+        print(f"{os.path.basename(s.file)}:{s.line}:{s.text}")
+    return 1 if unknown else 0
+
+
 def main(argv):
     if len(argv) == 2 and argv[0] == "lint":
         return lint(argv[1])
@@ -210,6 +236,8 @@ def main(argv):
         return cover(argv[1], argv[2])
     if len(argv) == 5 and argv[0] == "miss":
         return miss(*argv[1:])
+    if len(argv) >= 3 and argv[0] == "show":
+        return show(argv[1], argv[2:])
     if argv == ["kinds"]:
         return kinds()
     print(__doc__.strip())

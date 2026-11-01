@@ -61,6 +61,7 @@ Every question that comes up during building is logged in `~/.claude/whys/misses
 
 - **`whys lint <file-or-dir>`**: checks the format, unique IDs and parents, and reports `status=open|closed`.
 - **`whys cover <whys> <plan.md>`**: checks that every statement is cited by a plan task, and that every task cites one.
+- **`whys show <whys> <id>...`**: prints those statements with their parents, their children and same-tag lines, so a build step reads only what it needs.
 - **`whys miss <project> <id> <kind> <note>`** and **`whys kinds`**: write to and read from the miss log.
 
 Tests: `python3 -m unittest discover tests && bash tests/test_hook.sh`

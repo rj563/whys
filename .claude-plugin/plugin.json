@@ -1,7 +1,7 @@
 {
   "name": "whys",
   "description": "Deep batched questioning before building: drill a request into confirmed statements, never guess.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": { "name": "rj563" },
   "homepage": "https://github.com/rj563/whys",
   "repository": "https://github.com/rj563/whys",

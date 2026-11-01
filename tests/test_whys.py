@@ -86,6 +86,17 @@ class LintTest(unittest.TestCase):
         finally:
             os.unlink(fh.name)
 
+    def test_lint_requires_two_spaces(self):
+        with tempfile.NamedTemporaryFile("w", suffix=".md", delete=False) as fh:
+            fh.write("S1  ok. [owner]\nS1.1 one space. [owner]\nS1.2\ttab. [owner]\n")
+        try:
+            code, out = run("lint", fh.name)
+            self.assertEqual(code, 1)
+            self.assertIn("L2: use two spaces after S1.1", out)
+            self.assertIn("L3: use two spaces after S1.2", out)
+        finally:
+            os.unlink(fh.name)
+
     def test_lint_missing_path(self):
         code, out = run("lint", os.path.join(FIX, "nope.md"))
         self.assertEqual(code, 1)
@@ -168,6 +179,29 @@ class MissTest(unittest.TestCase):
         self.assertTrue(lines[0].startswith("ui 2"), out)
         self.assertTrue(any(l.startswith("edge-case 1") for l in lines), out)
         self.assertEqual(sum(l.split()[0] == "edge-case" for l in lines), 1)
+
+
+class ShowTest(unittest.TestCase):
+    def test_show_ancestors_self_descendants(self):
+        code, out = run("show", os.path.join(FIX, "closed.md"), "S1.1.1")
+        self.assertEqual(code, 0)
+        ids = [l.split(":", 2)[2].split()[0] for l in out.splitlines()]
+        self.assertEqual(ids, ["S1", "S1.1", "S1.1.1", "S1.1.1.1"])
+
+    def test_show_includes_same_tag(self):
+        _, out = run("show", os.path.join(FIX, "closed.md"), "S1.1.1.1")
+        self.assertIn("S1.1.1  Each class", out)
+        self.assertNotIn("S2  ", out)
+
+    def test_show_excludes_siblings(self):
+        _, out = run("show", os.path.join(FIX, "closed.md"), "S1.1.1")
+        self.assertNotIn("S1.1.2", out)
+        self.assertNotIn("S1.2", out)
+
+    def test_show_unknown_id(self):
+        code, out = run("show", os.path.join(FIX, "closed.md"), "S9")
+        self.assertEqual(code, 1)
+        self.assertIn("unknown S9", out)
 
 
 if __name__ == "__main__":

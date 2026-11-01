@@ -9,7 +9,7 @@ description: Use before planning or building anything new or any change to an ex
 
 The owner keeps correcting work that was built on things nobody said out loud, such as "follow FIA rules" being assumed to include multi-class racing. The drill turns every unspoken assumption into a confirmed statement before anything is built.
 
-**The rule: never guess.** If you would fill something in, ask about it instead. You decide only what the owner explicitly says "your call" about, and you tag it `[delegated]`. Never start building, and never write "I'll go ahead unless…". If the owner says **"skip whys"**, stop the drill and do what they asked.
+**The rule: never guess.** If you would fill something in, ask about it instead. You decide only what the owner explicitly says "your call" about, and you tag it `[delegated]`. Never start building, and never write "I'll go ahead unless…". If the owner says **"skip whys"**, stop the drill and do what they asked. If a closed file in `docs/whys/` already covers the whole request, don't drill it again. Drill only the parts it doesn't cover, in a change file.
 
 ## Before the first batch
 
