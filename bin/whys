@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+"""whys: mechanical checks for Whys statement files.
+
+  whys lint <file-or-dir>
+  whys cover <whys-file-or-dir> <plan.md>
+  whys miss <project> <statement-id> <kind> <note>
+  whys kinds
+"""
+import os
+import re
+import sys
+from dataclasses import dataclass, field
+
+CANDIDATE = re.compile(r"^(✗ |\? )?(S[0-9.]\S*)\s+(.*)$")
+ID = re.compile(r"^S\d+(\.\d+)*$")
+TAG = re.compile(r"\[(owner|delegated)\]")
+KEYWORD = re.compile(r"(?<!\S)#(\w+)")
+REPLACED = re.compile(r"→\s*(S\d+(?:\.\d+)*)")
+
+
+@dataclass
+class Statement:
+    id: str
+    depth: int
+    state: str  # live | rejected | open
+    tag: str | None
+    tags: list = field(default_factory=list)
+    replaced_by: str | None = None
+    file: str = ""
+    line: int = 0
+
+
+def md_files(path):
+    if os.path.isdir(path):
+        return sorted(os.path.join(path, f) for f in os.listdir(path) if f.endswith(".md"))
+    return [path]
+
+
+def parse(path, errors=None):
+    """Parse one file. Errors go to `errors` as (file, line, text)."""
+    errors = [] if errors is None else errors
+    out, allowed = [], None
+    with open(path, encoding="utf-8") as fh:
+        lines = fh.read().splitlines()
+    fence = False
+    for n, raw in enumerate(lines, 1):
+        line = raw.strip()
+        if line.startswith("```"):
+            fence = not fence
+            continue
+        if fence:
+            continue
+        if line.startswith("Tags:"):
+            allowed = set(KEYWORD.findall(line))
+            continue
+        m = CANDIDATE.match(line)
+        if not m:
+            continue
+        prefix, sid, rest = m.groups()
+        if not ID.match(sid):
+            errors.append((path, n, f"bad id {sid}"))
+            continue
+        rejected = prefix == "✗ " or rest.startswith("✗ ")
+        state = "open" if prefix == "? " else "rejected" if rejected else "live"
+        tags = TAG.findall(rest)
+        if state != "open" and len(tags) != 1:
+            errors.append((path, n, "missing tag" if not tags else "more than one tag"))
+        r = REPLACED.search(rest)
+        out.append(Statement(sid, sid.count(".") + 1, state, tags[0] if tags else None,
+                             KEYWORD.findall(rest), r.group(1) if r else None, path, n))
+    if allowed is not None:
+        for s in out:
+            for t in s.tags:
+                if t not in allowed:
+                    errors.append((path, s.line, f"unknown tag #{t}"))
+    return out
+
+
+def load(path, errors):
+    stmts = []
+    for f in md_files(path):
+        stmts += parse(f, errors)
+    return stmts
+
+
+def lint(path):
+    if not os.path.exists(path):
+        print(f"{path}: not found")
+        return 1
+    errors = []
+    stmts = load(path, errors)
+    seen = {}
+    for s in stmts:
+        if s.id in seen:
+            errors.append((s.file, s.line, f"duplicate {s.id}"))
+        seen.setdefault(s.id, s)
+    for s in stmts:
+        parent = s.id.rsplit(".", 1)[0] if "." in s.id else None
+        if parent and parent not in seen:
+            errors.append((s.file, s.line, f"parent {parent} missing"))
+        if s.replaced_by and s.replaced_by not in seen:
+            errors.append((s.file, s.line, f"replacement {s.replaced_by} missing"))
+    n_open = sum(s.state == "open" for s in stmts)
+    depth = max((s.depth for s in stmts), default=0)
+    status = "open" if n_open or not stmts else "closed"
+    print(f"status={status} depth={depth} open={n_open} statements={len(stmts)}")
+    multi = os.path.isdir(path)
+    for f, n, text in sorted(errors, key=lambda e: (e[0], e[1])):
+        print(f"{os.path.basename(f) + ':' if multi else ''}L{n}: {text}")
+    return 1 if errors else 0
+
+
+def main(argv):
+    if len(argv) == 2 and argv[0] == "lint":
+        return lint(argv[1])
+    print(__doc__.strip())
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
