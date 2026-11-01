@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Injects the Whys rule once per session. Keep it short: it costs context every session.
+ctx='Whys plugin: never guess, ask. Before planning or building anything (new work or a change), invoke the whys:drill skill, unless the owner says "skip whys" or a closed docs/whys file already covers the request. During building, invoke whys:check before each step or plan task.'
+esc=${ctx//\\/\\\\}
+esc=${esc//\"/\\\"}
+printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"%s"}}\n' "$esc"
