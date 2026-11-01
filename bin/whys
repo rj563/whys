@@ -110,9 +110,50 @@ def lint(path):
     return 1 if errors else 0
 
 
+TASK = re.compile(r"^###\s+Task\s+(\d+)")
+CITES = re.compile(r"^\*\*Statements:\*\*(.*)$")
+CITED_ID = re.compile(r"S\d+(?:\.\d+)*")
+
+
+def cover(whys_path, plan_path):
+    for p in (whys_path, plan_path):
+        if not os.path.exists(p):
+            print(f"{p}: not found")
+            return 1
+    stmts = {s.id: s for s in load(whys_path, [])}
+    tasks = {}
+    current = None
+    with open(plan_path, encoding="utf-8") as fh:
+        for line in fh:
+            m = TASK.match(line.strip())
+            if m:
+                current = m.group(1)
+                tasks[current] = []
+                continue
+            c = CITES.match(line.strip())
+            if c and current:
+                tasks[current] += CITED_ID.findall(c.group(1))
+    problems = []
+    cited = {i for ids in tasks.values() for i in ids}
+    for s in stmts.values():
+        if s.state == "live" and s.id not in cited:
+            problems.append(f"uncited {s.id}")
+    for t, ids in tasks.items():
+        if not ids:
+            problems.append(f"task {t} cites nothing")
+        for i in ids:
+            if i not in stmts:
+                problems.append(f"task {t} cites unknown {i}")
+    for p in problems:
+        print(p)
+    return 1 if problems else 0
+
+
 def main(argv):
     if len(argv) == 2 and argv[0] == "lint":
         return lint(argv[1])
+    if len(argv) == 3 and argv[0] == "cover":
+        return cover(argv[1], argv[2])
     print(__doc__.strip())
     return 2
 

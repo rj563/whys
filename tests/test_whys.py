@@ -71,5 +71,26 @@ class LintTest(unittest.TestCase):
         self.assertIn("not found", out)
 
 
+class CoverTest(unittest.TestCase):
+    def test_cover_ok(self):
+        code, out = run("cover", os.path.join(FIX, "closed.md"), os.path.join(FIX, "plan_ok.md"))
+        self.assertEqual((code, out), (0, ""))
+
+    def test_cover_gaps(self):
+        code, out = run("cover", os.path.join(FIX, "closed.md"), os.path.join(FIX, "plan_gaps.md"))
+        self.assertEqual(code, 1)
+        self.assertIn("uncited S1.1\n", out)
+        self.assertIn("task 2 cites nothing", out)
+        self.assertIn("task 3 cites unknown S9", out)
+
+    def test_cover_ignores_rejected(self):
+        _, out = run("cover", os.path.join(FIX, "closed.md"), os.path.join(FIX, "plan_gaps.md"))
+        self.assertNotIn("S1.2", out)
+
+    def test_cover_parent_cited_covers_nothing_else(self):
+        _, out = run("cover", os.path.join(FIX, "closed.md"), os.path.join(FIX, "plan_gaps.md"))
+        self.assertEqual([l for l in out.splitlines() if l.startswith("uncited")], ["uncited S1.1"])
+
+
 if __name__ == "__main__":
     unittest.main()
