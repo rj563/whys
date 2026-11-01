@@ -5,7 +5,7 @@ Path: `docs/whys/YYYY-MM-DD-<topic>.md` in the target repo. One file per project
 ```
 # Whys: Multi-class racing
 Request: Simulate FIA-style races.
-Status: closed (depth 4, 0 open)
+Status: open (depth 3, 1 open)
 Tags: #scoring #rules
 Changes: replaces S1.2 in 2026-10-01-core.md
 
@@ -15,7 +15,8 @@ S1.1.1  Each class is scored separately. [owner] #scoring
 S1.1.2  BoP applies per class. [delegated]
 ✗ S1.2  Weather rules are out of scope. [owner]
 ✗ S1.3  Two races per weekend. [owner] → S2
-? S3.2  What happens to lapped cars?
+S2  Sprint on Saturday, main race on Sunday. [owner]
+? S2.1  How long is the sprint?
 ```
 
 ## Lines

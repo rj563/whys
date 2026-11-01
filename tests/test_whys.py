@@ -65,6 +65,27 @@ class LintTest(unittest.TestCase):
         finally:
             os.unlink(fh.name)
 
+    def test_lint_non_utf8_reports_line(self):
+        with tempfile.NamedTemporaryFile("wb", suffix=".md", delete=False) as fh:
+            fh.write(b"S1  ok. [owner]\nS2  caf\xe9. [owner]\n")
+        try:
+            code, out = run("lint", fh.name)
+            self.assertEqual(code, 1)
+            self.assertIn("L2: not UTF-8", out)
+        finally:
+            os.unlink(fh.name)
+
+    def test_format_example_lints_clean(self):
+        with open(os.path.join(ROOT, "skills", "drill", "format.md"), encoding="utf-8") as fh:
+            block = fh.read().split("```")[1]
+        with tempfile.NamedTemporaryFile("w", suffix=".md", delete=False, encoding="utf-8") as fh:
+            fh.write(block)
+        try:
+            code, out = run("lint", fh.name)
+            self.assertEqual(code, 0, out)
+        finally:
+            os.unlink(fh.name)
+
     def test_lint_missing_path(self):
         code, out = run("lint", os.path.join(FIX, "nope.md"))
         self.assertEqual(code, 1)
@@ -85,7 +106,14 @@ class CoverTest(unittest.TestCase):
 
     def test_cover_ignores_rejected(self):
         _, out = run("cover", os.path.join(FIX, "closed.md"), os.path.join(FIX, "plan_gaps.md"))
-        self.assertNotIn("S1.2", out)
+        self.assertNotIn("uncited S1.2", out)
+
+    def test_cover_flags_citing_rejected_or_open(self):
+        code, out = run("cover", os.path.join(FIX, "closed.md"), os.path.join(FIX, "plan_gaps.md"))
+        self.assertIn("task 1 cites rejected S1.2", out)
+        code, out = run("cover", os.path.join(FIX, "open.md"), os.path.join(FIX, "plan_open.md"))
+        self.assertEqual(code, 1)
+        self.assertIn("task 1 cites open S1.1", out)
 
     def test_cover_parent_cited_covers_nothing_else(self):
         _, out = run("cover", os.path.join(FIX, "closed.md"), os.path.join(FIX, "plan_gaps.md"))
@@ -118,6 +146,11 @@ class MissTest(unittest.TestCase):
         code, _ = run("miss", "proj", "1.2", "edge-case", "x", env=self.env)
         self.assertEqual(code, 1)
         self.assertFalse(os.path.exists(self.log))
+
+    def test_miss_normalizes_kind(self):
+        run("miss", "p", "S1", "Edge Case", "a", env=self.env)
+        _, out = run("kinds", env=self.env)
+        self.assertTrue(any(l.startswith("edge-case 1") for l in out.splitlines()), out)
 
     def test_kinds_defaults_only(self):
         code, out = run("kinds", env=self.env)

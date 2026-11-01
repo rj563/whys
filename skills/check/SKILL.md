@@ -47,5 +47,5 @@ The main session collects every BLOCKED message into one owner message (the form
 
 1. Add each answer as a child statement (`S1.1.1.2  … [owner]`) and drill it with the whys:drill level loop until nothing new is open.
 2. Run `${CLAUDE_PLUGIN_ROOT}/bin/whys lint docs/whys`, which must exit 0.
-3. Log each gap: `${CLAUDE_PLUGIN_ROOT}/bin/whys miss <project> <statement-id> <kind> "<short note>"`, where kind is one from `bin/whys kinds` or a new one. Later drills ask about that kind up front.
+3. Log each gap: `${CLAUDE_PLUGIN_ROOT}/bin/whys miss "$(basename "$(git rev-parse --show-toplevel)")" <statement-id> <kind> "<short note>"`, where kind is one from `bin/whys kinds` or a new one. Later drills ask about that kind up front.
 4. Resume the step.

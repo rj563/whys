@@ -41,11 +41,15 @@ def parse(path, errors=None):
     """Parse one file. Errors go to `errors` as (file, line, text)."""
     errors = [] if errors is None else errors
     out, allowed = [], None
-    with open(path, encoding="utf-8") as fh:
+    with open(path, "rb") as fh:
         lines = fh.read().splitlines()
     fence = False
-    for n, raw in enumerate(lines, 1):
-        line = raw.strip()
+    for n, data in enumerate(lines, 1):
+        try:
+            line = data.decode("utf-8").strip()
+        except UnicodeDecodeError:
+            errors.append((path, n, "not UTF-8"))
+            continue
         if line.startswith("```"):
             fence = not fence
             continue
@@ -145,6 +149,8 @@ def cover(whys_path, plan_path):
         for i in ids:
             if i not in stmts:
                 problems.append(f"task {t} cites unknown {i}")
+            elif stmts[i].state != "live":
+                problems.append(f"task {t} cites {stmts[i].state} {i}")
     for p in problems:
         print(p)
     return 1 if problems else 0
@@ -164,6 +170,7 @@ def miss(project, sid, kind, note):
     if not ID.match(sid):
         print(f"bad id {sid}")
         return 1
+    kind = "-".join(kind.lower().split())
     path = miss_log()
     os.makedirs(os.path.dirname(path), exist_ok=True)
     new = not os.path.exists(path)
